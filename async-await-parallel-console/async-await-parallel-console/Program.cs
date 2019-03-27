@@ -11,8 +11,14 @@ namespace async_await_parallel_console
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("ExecuteSync()");
+            Console.WriteLine("ExecuteSync() 1st");
             ExecuteSync();
+            Console.WriteLine("\nExecuteSync() 2nd to avoid cache");
+            ExecuteSync();
+
+            Console.WriteLine("\nExecuteAsync()");
+            ExecuteAsync().GetAwaiter().GetResult();
+            
             Console.ReadKey();
         }
 
@@ -34,6 +40,28 @@ namespace async_await_parallel_console
             foreach (var website in websites)
             {
                 WebsiteDataModel results = DownloadWebsite(website);
+                ReportWebSiteInfo(results);
+            }
+        }
+
+        public static async Task ExecuteAsync()
+        {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+
+            await RunDownloadAsync();
+
+            watch.Stop();
+            var elapsedMs = watch.ElapsedMilliseconds;
+            Console.WriteLine($"Total execution time: {elapsedMs}");
+        }
+
+        private static async Task RunDownloadAsync()
+        {
+            List<string> websites = PrepareData();
+
+            foreach (var website in websites)
+            {
+                WebsiteDataModel results = await Task.Run(() => DownloadWebsite(website));
                 ReportWebSiteInfo(results);
             }
         }
