@@ -19,9 +19,12 @@ namespace async_await_parallel_console
             Console.WriteLine("\nExecuteAsync()");
             ExecuteAsync().GetAwaiter().GetResult();
 
-
             Console.WriteLine("\nExecuteParallelAsync()");
             ExecuteParallelAsync().GetAwaiter().GetResult();
+
+            Console.WriteLine("\nExecuteParallelAsyncV2()");
+            ExecuteParallelAsyncV2().GetAwaiter().GetResult();
+
             Console.ReadKey();
         }
 
@@ -80,6 +83,18 @@ namespace async_await_parallel_console
             Console.WriteLine($"Total execution time: {elapsedMs}");
         }
 
+
+        public static async Task ExecuteParallelAsyncV2()
+        {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+
+            await RunDownloadParallelAsyncV2();
+
+            watch.Stop();
+            var elapsedMs = watch.ElapsedMilliseconds;
+            Console.WriteLine($"Total execution time: {elapsedMs}");
+        }
+
         private static async Task RunDownloadParallelAsync()
         {
             List<string> websites = PrepareData();
@@ -88,6 +103,23 @@ namespace async_await_parallel_console
             foreach (var website in websites)
             {
                 tasks.Add(Task.Run(() => DownloadWebsite(website)));
+            }
+            var results = await Task.WhenAll(tasks);
+            foreach (var result in results)
+            {
+                ReportWebSiteInfo(result);
+            }
+        }
+
+
+        private static async Task RunDownloadParallelAsyncV2()
+        {
+            List<string> websites = PrepareData();
+            List<Task<WebsiteDataModel>> tasks = new List<Task<WebsiteDataModel>>();
+
+            foreach (var website in websites)
+            {
+                tasks.Add(DownloadWebsiteAsync(website));
             }
             var results = await Task.WhenAll(tasks);
             foreach (var result in results)
@@ -123,6 +155,17 @@ namespace async_await_parallel_console
 
             output.WebsiteUrl = website;
             output.WebsiteData = client.DownloadString(website);
+
+            return output;
+        }
+
+        private static async Task<WebsiteDataModel> DownloadWebsiteAsync(string website)
+        {
+            WebsiteDataModel output = new WebsiteDataModel();
+            WebClient client = new WebClient();
+
+            output.WebsiteUrl = website;
+            output.WebsiteData = await client.DownloadStringTaskAsync(website);
 
             return output;
         }
